@@ -3,9 +3,13 @@
   --ink-soft: #5c6353;
   --paper: #fbfaf6;
   --paper-dim: #f1f0e8;
-  --bar: #dcead0;
-  --rule: #96b47c;
-  --edge: #cdd0c2;
+  --bar: #eef3e7;
+  --rule: #7d9c62;
+  /* Same green, dark enough to pass AA when it carries text. */
+  --rule-ink: #4f6a3a;
+  --edge: #d9dbd0;
+  --hair: #e6e7de;
+  --grid: rgba(20, 23, 15, 0.035);
   --alarm: #a4381a;
   --alarm-tint: #f7e9e3;
 
@@ -29,10 +33,12 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* The grid stays part of the identity, but it sits behind the content now:
+   one third the contrast and a coarser pitch, so it reads as paper texture. */
 body {
-  background-image: linear-gradient(var(--edge) 1px, transparent 1px),
-    linear-gradient(90deg, var(--edge) 1px, transparent 1px);
-  background-size: 24px 24px;
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 32px 32px;
   background-position: -1px -1px;
   background-attachment: fixed;
 }
@@ -75,7 +81,7 @@ button {
 }
 
 .wordmark span {
-  color: var(--rule);
+  color: var(--rule-ink);
 }
 
 .trust {
@@ -93,11 +99,11 @@ button {
   gap: 8px;
 }
 
+/* No overflow clipping here: it cropped the focus ring on the EN/DE buttons.
+   Square corners also sit better with the rest of the controls. */
 .langswitch {
   display: inline-flex;
   border: 1px solid var(--ink);
-  border-radius: 2px;
-  overflow: hidden;
 }
 
 .lang {
@@ -108,7 +114,8 @@ button {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  padding: 4px 10px;
+  padding: 6px 11px;
+  min-height: 26px;
 }
 
 .lang + .lang {
@@ -123,7 +130,7 @@ button {
 /* ---------- intro ---------- */
 
 .intro {
-  margin: 22px 0 26px;
+  margin: 26px 0 8px;
   max-width: 62ch;
 }
 
@@ -143,11 +150,11 @@ button {
 }
 
 .intro-privacy {
-  margin: 8px 0 0;
+  margin: 10px 0 0;
   font-family: var(--mono);
   font-size: 12px;
   letter-spacing: 0.03em;
-  color: var(--rule);
+  color: var(--rule-ink);
 }
 
 /* ---------- paste zone ---------- */
@@ -181,9 +188,11 @@ button {
   outline: none;
 }
 
+/* The textarea suppresses its own outline, so the wrapper carries the focus
+   ring at the same 2px weight the rest of the page uses. */
 .dropzone:focus-within {
   border-color: var(--ink);
-  box-shadow: inset 0 0 0 1px var(--ink);
+  box-shadow: inset 0 0 0 2px var(--ink);
 }
 
 .zone-hint {
@@ -200,8 +209,44 @@ button {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
-  margin-top: 12px;
+  gap: 8px 14px;
+  margin-top: 14px;
+  min-height: 26px;
+}
+
+/* Detection reads as a sentence, not as an inverted diagnostic chip. */
+.detected {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.detected strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.detected-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Raw clipboard flavours are still available, just no longer competing
+   with the thing the user actually needs to read. */
+.flavours {
+  font-size: 11px;
+  color: var(--ink-soft);
+  opacity: 0.75;
+}
+
+.flavours code {
+  font-family: var(--mono);
+  font-size: 11px;
+  margin-left: 5px;
 }
 
 .badge {
@@ -214,14 +259,13 @@ button {
   background: var(--paper);
 }
 
-.badge.is-source {
-  background: var(--ink);
-  color: var(--paper);
-}
-
 .badge.is-low {
   border-color: var(--alarm);
   color: var(--alarm);
+  background: var(--alarm-tint);
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-size: 11px;
 }
 
 .spacer {
@@ -231,11 +275,11 @@ button {
 .linkish {
   border: 0;
   background: none;
-  padding: 4px 2px;
+  padding: 6px 4px;
+  min-height: 26px;
   font-family: var(--mono);
   font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  letter-spacing: 0.04em;
   color: var(--ink-soft);
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -282,8 +326,8 @@ button {
 .section-label {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin: 34px 0 10px;
+  gap: 10px;
+  margin: 48px 0 12px;
   font-family: var(--mono);
   font-size: 11px;
   letter-spacing: 0.14em;
@@ -295,7 +339,22 @@ button {
   content: "";
   flex: 1;
   height: 1px;
-  background: var(--edge);
+  background: var(--hair);
+}
+
+/* Small numerals carry the Paste, Preview, Output sequence without
+   turning the page into a wizard. */
+.step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--edge);
+  background: var(--paper);
+  font-size: 10px;
+  letter-spacing: 0;
+  color: var(--ink-soft);
 }
 
 .fanfold {
@@ -306,20 +365,20 @@ button {
 }
 
 .sprockets {
-  flex: 0 0 24px;
+  flex: 0 0 22px;
   background-color: var(--paper);
   background-image: radial-gradient(
-    circle at 12px 11px,
-    var(--edge) 0 3.5px,
-    transparent 4px
+    circle at 11px 11px,
+    var(--hair) 0 3px,
+    transparent 3.5px
   );
-  background-size: 24px 22px;
-  border-right: 1px dashed var(--edge);
+  background-size: 22px 22px;
+  border-right: 1px dashed var(--hair);
 }
 
 .sprockets.is-right {
   border-right: 0;
-  border-left: 1px dashed var(--edge);
+  border-left: 1px dashed var(--hair);
 }
 
 .sheet {
@@ -335,20 +394,23 @@ button {
 }
 
 .sheet td {
-  padding: 7px 12px;
+  padding: 9px 14px;
   vertical-align: top;
   white-space: pre-wrap;
-  border-right: 1px solid rgba(20, 23, 15, 0.07);
+  border-right: 1px solid rgba(20, 23, 15, 0.045);
 }
 
 .sheet tr:nth-child(even) td {
   background: var(--bar);
 }
 
+/* The header stays clearly distinct, but as a weighted band rather than a
+   full black inversion that outshouted the data underneath it. */
 .sheet tr.is-header td {
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--paper-dim);
+  color: var(--ink);
   font-weight: 700;
+  border-bottom: 2px solid var(--ink);
   position: sticky;
   top: 0;
 }
@@ -373,16 +435,17 @@ button {
 .rowcount {
   font-family: var(--mono);
   font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  letter-spacing: 0.04em;
   color: var(--ink-soft);
-  margin-top: 8px;
+  opacity: 0.85;
+  margin-top: 10px;
 }
 
 /* ---------- output ---------- */
 
 .tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   border-bottom: 2px solid var(--ink);
 }
@@ -391,12 +454,26 @@ button {
   border: 1px solid var(--edge);
   border-bottom: 0;
   background: var(--paper-dim);
-  padding: 9px 16px;
+  padding: 8px 13px;
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-soft);
+}
+
+/* Table is the path a non-technical user wants, so it leads: full size and
+   full contrast. The developer formats stay right beside it, just quieter. */
+.tab.is-primary {
+  padding: 8px 20px;
+  font-size: 12px;
+  color: var(--ink);
+  border-color: var(--ink-soft);
+}
+
+.tab:hover:not([aria-selected="true"]) {
+  color: var(--ink);
+  background: var(--paper);
 }
 
 .tab[aria-selected="true"] {
@@ -426,21 +503,25 @@ button {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 14px;
+  gap: 12px 18px;
   padding: 12px 16px;
-  border-bottom: 1px solid var(--edge);
+  border-bottom: 1px solid var(--hair);
   background: var(--paper-dim);
 }
 
+/* Explanatory, so it is set as a sentence rather than shouted in caps. */
 .option {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  gap: 8px;
+  min-height: 26px;
+  font-size: 13px;
   color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.option:hover {
+  color: var(--ink);
 }
 
 .option input {
@@ -457,11 +538,11 @@ button {
   border: 1px solid var(--ink);
   background: var(--ink);
   color: var(--paper);
-  padding: 9px 20px;
+  padding: 9px 22px;
   font-family: var(--mono);
   font-size: 12px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   transition: background 120ms ease, color 120ms ease;
 }
 
@@ -471,16 +552,19 @@ button {
   color: var(--ink);
 }
 
+/* Still clearly inactive, but dim enough at 0.4 that the label stopped being
+   readable (2.6:1). 0.6 keeps the affordance and brings it back over 4.5:1. */
 .copy:disabled {
-  opacity: 0.4;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
 .note {
-  margin: 10px 0 0;
+  margin: 12px 0 0;
   font-size: 13px;
   color: var(--ink-soft);
-  line-height: 1.5;
+  line-height: 1.55;
+  max-width: 72ch;
 }
 
 .colophon {
@@ -494,12 +578,59 @@ button {
   color: var(--ink-soft);
 }
 
+@media (max-width: 760px) {
+  .masthead-right {
+    align-items: flex-start;
+  }
+  .section-label {
+    margin-top: 38px;
+  }
+}
+
 @media (max-width: 560px) {
   .sprockets {
     display: none;
   }
   .shell {
     padding: 24px 14px 60px;
+  }
+  .intro-body {
+    font-size: 14px;
+  }
+  .clean-table {
+    padding: 14px;
+  }
+  .output pre {
+    padding: 14px;
+  }
+  .toolbar {
+    gap: 6px 12px;
+  }
+}
+
+@media (max-width: 400px) {
+  .shell {
+    padding: 20px 12px 52px;
+  }
+  .tab {
+    padding: 8px 10px;
+  }
+  .tab.is-primary {
+    padding: 8px 14px;
+  }
+  .output-bar {
+    padding: 10px 12px;
+  }
+  /* Keep the primary action reachable instead of letting it wrap off-row. */
+  .output-bar .copy {
+    width: 100%;
+    padding: 10px 12px;
+  }
+  .output-bar .spacer {
+    display: none;
+  }
+  .flavours {
+    flex-basis: 100%;
   }
 }
 
@@ -525,7 +656,7 @@ button {
 /* ---------- output help + clean table ---------- */
 
 .tab-help {
-  margin: 8px 0 0;
+  margin: 10px 0 12px;
   font-size: 13px;
   line-height: 1.5;
   color: var(--ink-soft);
@@ -540,19 +671,20 @@ button {
 
 .clean-table {
   overflow-x: auto;
-  padding: 16px;
+  padding: 22px;
   background: var(--paper);
 }
 
 .clean-table table {
   border-collapse: collapse;
   font-size: 14px;
+  line-height: 1.5;
 }
 
 .clean-table th,
 .clean-table td {
-  border: 1px solid var(--edge);
-  padding: 6px 10px;
+  border: 1px solid var(--hair);
+  padding: 9px 14px;
   text-align: left;
   vertical-align: top;
   white-space: pre-wrap;
@@ -561,4 +693,5 @@ button {
 .clean-table th {
   background: var(--paper-dim);
   font-weight: 700;
+  border-bottom-color: var(--edge);
 }

@@ -65,8 +65,10 @@ describe("TableUnfuck", () => {
       text: "Name\tRole\nAda\tEngineer",
     });
 
-    // Source detection badge
-    expect(await screen.findByText(/read as text\/html/i)).toBeInTheDocument();
+    // Source detection line, plus the raw clipboard flavour kept as secondary info
+    expect(await screen.findByText(/detected as/i)).toBeInTheDocument();
+    expect(screen.getByText("HTML table")).toBeInTheDocument();
+    expect(screen.getByText("text/html")).toBeInTheDocument();
 
     // Preview shows the real cells
     const preview = document.querySelector(".sheet table")!;
