@@ -167,6 +167,10 @@ export default function App() {
         <p className="intro-privacy">{t("introPrivacy")}</p>
       </section>
 
+      <h2 className="section-label">
+        <span className="step">1</span>
+        {t("paste")}
+      </h2>
       <div className={`dropzone${raw ? " is-loaded" : ""}`}>
         <label className="sr-only" htmlFor="paste-input">
           {t("pasteLabel")}
@@ -184,21 +188,25 @@ export default function App() {
 
       <div className="toolbar">
         {table && (
-          <span className="badge is-source">
-            {t("readAs")} {t(SOURCE_KEY[table.source])}
+          <span className="detected">
+            <span className="detected-label">{t("readAs")}</span>
+            <strong>{t(SOURCE_KEY[table.source])}</strong>
           </span>
         )}
-        {flavours.map((flavour) => (
-          <span className="badge" key={flavour}>
-            {flavour}
-          </span>
-        ))}
         {table && table.confidence !== "high" && (
           <span className="badge is-low">
             {table.confidence === "medium" ? t("confidenceMedium") : t("confidenceLow")}
           </span>
         )}
         <span className="spacer" />
+        {flavours.length > 0 && (
+          <span className="flavours">
+            {t("flavoursLabel")}{" "}
+            {flavours.map((flavour) => (
+              <code key={flavour}>{flavour}</code>
+            ))}
+          </span>
+        )}
         {(raw || table) && (
           <button type="button" className="linkish" onClick={clear}>
             {t("clear")}
@@ -222,7 +230,10 @@ export default function App() {
         )}
       </div>
 
-      <h2 className="section-label">{t("preview")}</h2>
+      <h2 className="section-label">
+        <span className="step">2</span>
+        {t("preview")}
+      </h2>
       <div className="fanfold">
         <div className="sprockets" aria-hidden="true" />
         <div className="sheet">
@@ -258,7 +269,10 @@ export default function App() {
         </p>
       )}
 
-      <h2 className="section-label">{t("output")}</h2>
+      <h2 className="section-label">
+        <span className="step">3</span>
+        {t("output")}
+      </h2>
       <div className="tabs" role="tablist" aria-label={t("outputFormat")}>
         {TABS.map(({ id, label }) => (
           <button
@@ -268,7 +282,7 @@ export default function App() {
             id={`tab-${id}`}
             aria-selected={tab === id}
             aria-controls="output-panel"
-            className="tab"
+            className={`tab${id === "table" ? " is-primary" : ""}`}
             onClick={() => setTab(id)}
           >
             {t(label)}
