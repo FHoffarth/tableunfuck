@@ -7,38 +7,52 @@ import {
 } from "./lib/parseClipboard";
 import { parsePlainText } from "./lib/parseText";
 import { toJson, toMarkdown, toTsv, type JsonShape } from "./lib/render";
+import {
+  buildTablePayload,
+  writePlainClipboard,
+  writeRichClipboard,
+} from "./lib/clipboard";
 import type { ParsedTable } from "./lib/types";
+import { DEFAULT_LANG, LANGS, STRINGS, type Lang, type StringKey } from "./i18n";
 
-type OutputTab = "markdown" | "tsv" | "json";
+type OutputTab = "table" | "markdown" | "tsv" | "json";
 
-const TABS: { id: OutputTab; label: string }[] = [
-  { id: "markdown", label: "Markdown" },
-  { id: "tsv", label: "TSV" },
-  { id: "json", label: "JSON" },
+const TABS: { id: OutputTab; label: StringKey; help: StringKey }[] = [
+  { id: "table", label: "tabTable", help: "helpTable" },
+  { id: "markdown", label: "tabMarkdown", help: "helpMarkdown" },
+  { id: "tsv", label: "tabTsv", help: "helpTsv" },
+  { id: "json", label: "tabJson", help: "helpJson" },
 ];
 
-const SOURCE_LABEL: Record<ParsedTable["source"], string> = {
-  html: "text/html",
-  tsv: "tab-separated",
-  text: "plain text",
+const SOURCE_KEY: Record<ParsedTable["source"], StringKey> = {
+  html: "sourceHtml",
+  tsv: "sourceTsv",
+  text: "sourceText",
 };
+
+type CopyState = "idle" | "rich" | "plain" | "failed";
 
 export default function App() {
   const [raw, setRaw] = useState("");
   const [table, setTable] = useState<ParsedTable | null>(null);
   const [flavours, setFlavours] = useState<string[]>([]);
-  const [tab, setTab] = useState<OutputTab>("markdown");
+  const [tab, setTab] = useState<OutputTab>("table");
   const [jsonShape, setJsonShape] = useState<JsonShape>("arrays");
   const [useHeader, setUseHeader] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copyState, setCopyState] = useState<CopyState>("idle");
+  const [lang, setLang] = useState<Lang>(DEFAULT_LANG);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Language only selects strings. It never touches raw, table or any option,
+  // so switching cannot reparse, reset input, or change output.
+  const t = (key: StringKey) => STRINGS[lang][key];
 
   const ingest = (payload: ClipboardPayload) => {
     const parsed = parseClipboard(payload);
     setTable(parsed);
     setFlavours(describeAvailableFlavours(payload));
     setUseHeader(parsed.hasHeaderEvidence);
-    setCopied(false);
+    setCopyState("idle");
   };
 
   // One document-level listener, so Cmd/Ctrl+V works anywhere on the page.
@@ -57,7 +71,7 @@ export default function App() {
   const onEdit = (value: string) => {
     setRaw(value);
     setFlavours(value.trim() ? ["text/plain"] : []);
-    setCopied(false);
+    setCopyState("idle");
     if (!value.trim()) {
       setTable(null);
       return;
@@ -72,7 +86,7 @@ export default function App() {
     setTable(null);
     setFlavours([]);
     setUseHeader(false);
-    setCopied(false);
+    setCopyState("idle");
     textareaRef.current?.focus();
   };
 
@@ -84,33 +98,44 @@ export default function App() {
     [table, useHeader, jsonShape],
   );
 
+  const hasRows = !!table && table.rows.length > 0;
+  const columns = hasRows ? table.rows[0].length : 0;
+
+  /** Text output for the three text tabs. Empty in Table mode, which renders DOM. */
   const output = useMemo(() => {
     if (!table || table.rows.length === 0) return "";
     if (tab === "markdown") return toMarkdown(table, { useFirstRowAsHeader: useHeader });
     if (tab === "tsv") return toTsv(table);
-    return json.text;
+    if (tab === "json") return json.text;
+    return "";
   }, [table, tab, useHeader, json]);
 
-  const copy = async () => {
-    if (!output) return;
-    try {
-      await navigator.clipboard.writeText(output);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1600);
-    } catch {
-      const el = document.createElement("textarea");
-      el.value = output;
-      document.body.appendChild(el);
-      el.select();
-      document.execCommand("copy");
-      el.remove();
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1600);
-    }
+  const canCopy = tab === "table" ? hasRows : output !== "";
+
+  const flash = (state: CopyState) => {
+    setCopyState(state);
+    window.setTimeout(() => setCopyState("idle"), 1600);
   };
 
-  const hasRows = !!table && table.rows.length > 0;
-  const columns = hasRows ? table.rows[0].length : 0;
+  const copy = async () => {
+    if (!canCopy) return;
+    if (tab === "table" && table) {
+      const payload = buildTablePayload(table, { useFirstRowAsHeader: useHeader });
+      flash(await writeRichClipboard(payload));
+      return;
+    }
+    flash((await writePlainClipboard(output)) ? "rich" : "failed");
+  };
+
+  const copyLabel = () => {
+    if (copyState === "rich") return t("copied");
+    if (copyState === "plain") return t("copiedPlain");
+    if (copyState === "failed") return t("copyFailed");
+    return tab === "table" ? t("copyTable") : t("copy");
+  };
+
+  const headerRow = hasRows && useHeader ? table.rows[0] : null;
+  const bodyRows = !hasRows ? [] : useHeader ? table.rows.slice(1) : table.rows;
 
   return (
     <div className="shell">
@@ -118,16 +143,33 @@ export default function App() {
         <h1 className="wordmark">
           Table<span>Unfuck</span>
         </h1>
-        <p className="trust">Everything stays in your browser</p>
+        <div className="masthead-right">
+          <div className="langswitch" role="group" aria-label="Language">
+            {LANGS.map((code) => (
+              <button
+                key={code}
+                type="button"
+                className={`lang${lang === code ? " is-active" : ""}`}
+                aria-pressed={lang === code}
+                onClick={() => setLang(code)}
+              >
+                {code.toUpperCase()}
+              </button>
+            ))}
+          </div>
+          <p className="trust">{t("trust")}</p>
+        </div>
       </header>
 
-      <p className="subline">
-        Paste a broken table. Get clean Markdown, TSV or JSON.
-      </p>
+      <section className="intro">
+        <h2 className="intro-headline">{t("introHeadline")}</h2>
+        <p className="intro-body">{t("introBody")}</p>
+        <p className="intro-privacy">{t("introPrivacy")}</p>
+      </section>
 
       <div className={`dropzone${raw ? " is-loaded" : ""}`}>
         <label className="sr-only" htmlFor="paste-input">
-          Paste a table here
+          {t("pasteLabel")}
         </label>
         <textarea
           id="paste-input"
@@ -135,14 +177,16 @@ export default function App() {
           value={raw}
           spellCheck={false}
           onChange={(event) => onEdit(event.target.value)}
-          placeholder="Press Cmd/Ctrl+V anywhere on this page, or type tab-separated rows here."
+          placeholder={t("placeholder")}
         />
         {!raw && <span className="zone-hint">⌘V / Ctrl+V</span>}
       </div>
 
       <div className="toolbar">
         {table && (
-          <span className="badge is-source">Read as {SOURCE_LABEL[table.source]}</span>
+          <span className="badge is-source">
+            {t("readAs")} {t(SOURCE_KEY[table.source])}
+          </span>
         )}
         {flavours.map((flavour) => (
           <span className="badge" key={flavour}>
@@ -150,12 +194,14 @@ export default function App() {
           </span>
         ))}
         {table && table.confidence !== "high" && (
-          <span className="badge is-low">{table.confidence} confidence</span>
+          <span className="badge is-low">
+            {table.confidence === "medium" ? t("confidenceMedium") : t("confidenceLow")}
+          </span>
         )}
         <span className="spacer" />
         {(raw || table) && (
           <button type="button" className="linkish" onClick={clear}>
-            Clear
+            {t("clear")}
           </button>
         )}
       </div>
@@ -163,17 +209,20 @@ export default function App() {
       <div aria-live="polite">
         {table && table.warnings.length > 0 && (
           <section className="warnings">
-            <h2>What the parser changed</h2>
+            <h2>{t("warningsTitle")}</h2>
             <ul>
               {table.warnings.map((warning) => (
                 <li key={warning}>{warning}</li>
               ))}
             </ul>
+            {lang !== "en" && (
+              <p className="warnings-lang">{t("warningsEnglishOnly")}</p>
+            )}
           </section>
         )}
       </div>
 
-      <h2 className="section-label">Preview</h2>
+      <h2 className="section-label">{t("preview")}</h2>
       <div className="fanfold">
         <div className="sprockets" aria-hidden="true" />
         <div className="sheet">
@@ -189,7 +238,7 @@ export default function App() {
                     {row.map((cell, cellIndex) => (
                       // eslint-disable-next-line react/no-array-index-key
                       <td key={cellIndex}>
-                        {cell === "" ? <span className="cell-empty">—</span> : cell}
+                        {cell === "" ? <span className="cell-empty">-</span> : cell}
                       </td>
                     ))}
                   </tr>
@@ -197,24 +246,20 @@ export default function App() {
               </tbody>
             </table>
           ) : (
-            <p className="empty-state">
-              Nothing pasted yet. Copy a table from an email, Slack, Notion, Jira or any
-              web page, then press Cmd/Ctrl+V. Parsing happens here on your machine —
-              nothing is uploaded.
-            </p>
+            <p className="empty-state">{t("emptyState")}</p>
           )}
         </div>
         <div className="sprockets is-right" aria-hidden="true" />
       </div>
       {hasRows && (
         <p className="rowcount">
-          {table.rows.length} {table.rows.length === 1 ? "row" : "rows"} × {columns}{" "}
-          {columns === 1 ? "column" : "columns"}
+          {table.rows.length} {t(table.rows.length === 1 ? "row" : "rows")} × {columns}{" "}
+          {t(columns === 1 ? "column" : "columns")}
         </p>
       )}
 
-      <h2 className="section-label">Output</h2>
-      <div className="tabs" role="tablist" aria-label="Output format">
+      <h2 className="section-label">{t("output")}</h2>
+      <div className="tabs" role="tablist" aria-label={t("outputFormat")}>
         {TABS.map(({ id, label }) => (
           <button
             key={id}
@@ -226,12 +271,20 @@ export default function App() {
             className="tab"
             onClick={() => setTab(id)}
           >
-            {label}
+            {t(label)}
           </button>
         ))}
       </div>
+      <p className="tab-help" data-testid="tab-help">
+        {t(TABS.find((entry) => entry.id === tab)!.help)}
+      </p>
 
-      <div className="output" id="output-panel" role="tabpanel" aria-labelledby={`tab-${tab}`}>
+      <div
+        className="output"
+        id="output-panel"
+        role="tabpanel"
+        aria-labelledby={`tab-${tab}`}
+      >
         <div className="output-bar">
           <label className={`option${hasRows ? "" : " is-disabled"}`}>
             <input
@@ -240,7 +293,7 @@ export default function App() {
               disabled={!hasRows}
               onChange={(event) => setUseHeader(event.target.checked)}
             />
-            First row is the header
+            {t("firstRowHeader")}
           </label>
 
           {tab === "json" && (
@@ -253,31 +306,62 @@ export default function App() {
                   setJsonShape(event.target.checked ? "objects" : "arrays")
                 }
               />
-              Array of objects
+              {t("arrayOfObjects")}
             </label>
           )}
 
           <span className="spacer" />
-          <button type="button" className="copy" onClick={copy} disabled={!output}>
-            {copied ? "Copied" : "Copy"}
+          <button type="button" className="copy" onClick={copy} disabled={!canCopy}>
+            {copyLabel()}
           </button>
         </div>
-        <pre data-testid="output">{output}</pre>
+
+        {tab === "table" ? (
+          <div className="clean-table" data-testid="output-table">
+            {hasRows && (
+              <table>
+                {headerRow && (
+                  <thead>
+                    <tr>
+                      {headerRow.map((cell, i) => (
+                        // eslint-disable-next-line react/no-array-index-key
+                        <th key={i}>{cell}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                )}
+                <tbody>
+                  {bodyRows.map((row, rowIndex) => (
+                    // eslint-disable-next-line react/no-array-index-key
+                    <tr key={rowIndex}>
+                      {row.map((cell, cellIndex) => (
+                        // eslint-disable-next-line react/no-array-index-key
+                        <td key={cellIndex}>{cell}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        ) : (
+          <pre data-testid="output">{output}</pre>
+        )}
       </div>
 
+      {tab === "table" && hasRows && <p className="note">{t("richCopyNote")}</p>}
+      {tab === "table" && hasRows && !useHeader && (
+        <p className="note">{t("tableNoHeader")}</p>
+      )}
       {tab === "json" && json.note && <p className="note">{json.note}</p>}
       {tab === "markdown" && hasRows && !useHeader && (
-        <p className="note">
-          Markdown tables need a header row, so this one is blank. Tick “First row is the
-          header” if row one really is the header — no column names are invented.
-        </p>
+        <p className="note">{t("markdownNoHeader")}</p>
       )}
 
       <footer className="colophon">
-        No backend. No accounts. No analytics. Nothing is stored between visits.
+        {t("footerA")}
         <br />
-        Deterministic parsing only — the parser reports what it changed instead of
-        guessing.
+        {t("footerB")}
       </footer>
     </div>
   );
