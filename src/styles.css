@@ -86,11 +86,68 @@ button {
   color: var(--ink-soft);
 }
 
-.subline {
-  margin: 14px 0 28px;
-  font-size: 17px;
-  max-width: 46ch;
+.masthead-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.langswitch {
+  display: inline-flex;
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.lang {
+  border: 0;
+  background: var(--paper);
   color: var(--ink-soft);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 4px 10px;
+}
+
+.lang + .lang {
+  border-left: 1px solid var(--ink);
+}
+
+.lang.is-active {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* ---------- intro ---------- */
+
+.intro {
+  margin: 22px 0 26px;
+  max-width: 62ch;
+}
+
+.intro-headline {
+  margin: 0 0 8px;
+  font-family: var(--mono);
+  font-size: clamp(18px, 3vw, 23px);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.intro-body {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+.intro-privacy {
+  margin: 8px 0 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  color: var(--rule);
 }
 
 /* ---------- paste zone ---------- */
@@ -463,4 +520,45 @@ button {
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* ---------- output help + clean table ---------- */
+
+.tab-help {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.warnings-lang {
+  margin: 10px 0 0;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+.clean-table {
+  overflow-x: auto;
+  padding: 16px;
+  background: var(--paper);
+}
+
+.clean-table table {
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.clean-table th,
+.clean-table td {
+  border: 1px solid var(--edge);
+  padding: 6px 10px;
+  text-align: left;
+  vertical-align: top;
+  white-space: pre-wrap;
+}
+
+.clean-table th {
+  background: var(--paper-dim);
+  font-weight: 700;
 }

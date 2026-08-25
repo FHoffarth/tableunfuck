@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import App from "./App";
 
@@ -15,11 +15,41 @@ function pasteIntoDocument(data: { html?: string; text?: string }) {
   });
 }
 
+/** The rendered Table output, read back as a plain grid. */
+function readOutputTable(): { header: string[]; body: string[][] } {
+  const root = screen.getByTestId("output-table");
+  const header = Array.from(root.querySelectorAll("thead th")).map(
+    (th) => th.textContent ?? "",
+  );
+  const body = Array.from(root.querySelectorAll("tbody tr")).map((tr) =>
+    Array.from(tr.querySelectorAll("td")).map((td) => td.textContent ?? ""),
+  );
+  return { header, body };
+}
+
+/** jsdom's Blob has no .text(), so read it the long way. */
+function readBlob(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(blob);
+  });
+}
+
+class FakeClipboardItem {
+  constructor(public readonly items: Record<string, Blob>) {}
+}
+
 describe("TableUnfuck", () => {
   beforeEach(() => {
     Object.assign(navigator, {
       clipboard: { writeText: vi.fn().mockResolvedValue(undefined) },
     });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it("goes from an HTML paste to a preview and copyable Markdown", async () => {
@@ -46,13 +76,14 @@ describe("TableUnfuck", () => {
     // <th> evidence auto-selects the header row
     expect(screen.getByLabelText(/first row is the header/i)).toBeChecked();
 
-    // Markdown output is rendered and copyable
+    // Markdown output is unchanged by this slice, and still copyable
+    fireEvent.click(screen.getByRole("tab", { name: "Markdown" }));
     const output = screen.getByTestId("output");
     expect(output.textContent).toBe(
       ["| Name | Role |", "| --- | --- |", "| Ada | Engineer |"].join("\n"),
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /copy/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^copy$/i }));
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(output.textContent);
     expect(await screen.findByRole("button", { name: /copied/i })).toBeInTheDocument();
   });
@@ -97,5 +128,130 @@ describe("TableUnfuck", () => {
     expect(await screen.findByText(/low confidence/i)).toBeInTheDocument();
     const rows = document.querySelectorAll(".sheet table tr");
     rows.forEach((row) => expect(row.querySelectorAll("td")).toHaveLength(1));
+  });
+
+  describe("Table output", () => {
+    it("is the default mode and mirrors the parsed rows and columns", () => {
+      render(<App />);
+      expect(screen.getByRole("tab", { name: "Table" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
+
+      pasteIntoDocument({ text: "Name\tRole\nAda\tEngineer\nGrace\tArchitect" });
+
+      const { header, body } = readOutputTable();
+      expect(header).toEqual([]);
+      expect(body).toEqual([
+        ["Name", "Role"],
+        ["Ada", "Engineer"],
+        ["Grace", "Architect"],
+      ]);
+    });
+
+    it("preserves explicit header state", () => {
+      render(<App />);
+      pasteIntoDocument({ text: "Name\tRole\nAda\tEngineer" });
+
+      fireEvent.click(screen.getByLabelText(/first row is the header/i));
+
+      const { header, body } = readOutputTable();
+      expect(header).toEqual(["Name", "Role"]);
+      expect(body).toEqual([["Ada", "Engineer"]]);
+    });
+
+    it("invents no column names when no header is marked", () => {
+      render(<App />);
+      pasteIntoDocument({ text: "Ada\tEngineer" });
+
+      const { header, body } = readOutputTable();
+      expect(header).toEqual([]);
+      expect(body).toEqual([["Ada", "Engineer"]]);
+      expect(screen.getByTestId("output-table").textContent).not.toMatch(
+        /column\s*\d/i,
+      );
+    });
+
+    it("copies a rich text/html payload with a TSV plain-text fallback", async () => {
+      const write = vi.fn().mockResolvedValue(undefined);
+      vi.stubGlobal("ClipboardItem", FakeClipboardItem);
+      Object.assign(navigator, {
+        clipboard: { write, writeText: vi.fn().mockResolvedValue(undefined) },
+      });
+
+      render(<App />);
+      pasteIntoDocument({ text: "Name\tRole\nAda\tEngineer" });
+      fireEvent.click(screen.getByLabelText(/first row is the header/i));
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: /copy table/i }));
+      });
+
+      expect(write).toHaveBeenCalledTimes(1);
+      const [items] = write.mock.calls[0] as [FakeClipboardItem[]];
+      const flavours = items[0].items;
+
+      expect(Object.keys(flavours).sort()).toEqual(["text/html", "text/plain"]);
+      await expect(readBlob(flavours["text/html"])).resolves.toContain("<table");
+      await expect(readBlob(flavours["text/plain"])).resolves.toBe(
+        "Name\tRole\nAda\tEngineer",
+      );
+    });
+  });
+
+  describe("language switch", () => {
+    it("changes the UI copy in both directions", () => {
+      render(<App />);
+
+      expect(screen.getByText("Messy table in. Clean table out.")).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: "Table" })).toBeInTheDocument();
+      expect(screen.getByText(/copy a clean table into documents/i)).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole("button", { name: "DE" }));
+
+      expect(
+        screen.getByText("Kaputte Tabelle rein. Saubere Tabelle raus."),
+      ).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: "Tabelle" })).toBeInTheDocument();
+      expect(
+        screen.getByText("Nichts wird hochgeladen. Deine Daten bleiben im Browser."),
+      ).toBeInTheDocument();
+      expect(screen.getByText(/als saubere Tabelle in Dokumente/i)).toBeInTheDocument();
+      expect(
+        screen.getByLabelText(/Erste Zeile ist die Kopfzeile/i),
+      ).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole("button", { name: "EN" }));
+      expect(screen.getByText("Messy table in. Clean table out.")).toBeInTheDocument();
+    });
+
+    it("does not touch the input, the parsed data or the output", () => {
+      render(<App />);
+      pasteIntoDocument({ text: "Name\tRole\nAda\tEngineer" });
+      fireEvent.click(screen.getByLabelText(/first row is the header/i));
+
+      const before = readOutputTable();
+      const rawBefore = (
+        screen.getByLabelText(/paste a table here/i) as HTMLTextAreaElement
+      ).value;
+
+      fireEvent.click(screen.getByRole("button", { name: "DE" }));
+
+      expect(readOutputTable()).toEqual(before);
+      expect(
+        (screen.getByLabelText(/Erste Zeile ist die Kopfzeile/i) as HTMLInputElement)
+          .checked,
+      ).toBe(true);
+      expect(
+        (screen.getByLabelText(/Tabelle hier einfügen/i) as HTMLTextAreaElement).value,
+      ).toBe(rawBefore);
+
+      // Text formats are unaffected too.
+      fireEvent.click(screen.getByRole("tab", { name: "TSV" }));
+      expect(screen.getByTestId("output").textContent).toBe("Name\tRole\nAda\tEngineer");
+
+      fireEvent.click(screen.getByRole("button", { name: "EN" }));
+      expect(screen.getByTestId("output").textContent).toBe("Name\tRole\nAda\tEngineer");
+    });
   });
 });
