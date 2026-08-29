@@ -74,7 +74,7 @@ const en = {
   footerNavigation: "Footer links",
   privacyLink: "Privacy",
   imprintLink: "Imprint",
-  madeByDebother: "Made by Debother",
+  madeByDebother: "Made by debother.",
   githubLink: "GitHub",
 } as const;
 
@@ -146,7 +146,7 @@ const de: Record<StringKey, string> = {
   footerNavigation: "Footer-Links",
   privacyLink: "Datenschutz",
   imprintLink: "Impressum",
-  madeByDebother: "Made by Debother",
+  madeByDebother: "Made by debother.",
   githubLink: "GitHub",
 };
 

@@ -284,7 +284,7 @@ describe("TableUnfuck", () => {
         "https://debother.com/imprint/",
       );
       expect(
-        within(englishFooter).getByRole("link", { name: "Made by Debother" }),
+        within(englishFooter).getByRole("link", { name: "Made by debother." }),
       ).toHaveAttribute("href", "https://debother.com/");
       expect(within(englishFooter).getByRole("link", { name: "GitHub" })).toHaveAttribute(
         "href",
@@ -302,7 +302,7 @@ describe("TableUnfuck", () => {
         "https://debother.com/impressum/",
       );
       expect(
-        within(germanFooter).getByRole("link", { name: "Made by Debother" }),
+        within(germanFooter).getByRole("link", { name: "Made by debother." }),
       ).toHaveAttribute("href", "https://debother.com/");
       expect(within(germanFooter).getByRole("link", { name: "GitHub" })).toHaveAttribute(
         "href",
