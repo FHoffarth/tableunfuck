@@ -3,7 +3,7 @@
 **Messy table in. Clean table out.**
 
 [![Live](https://img.shields.io/badge/live-tableunfuck.com-14170f)](https://tableunfuck.com)
-[![Deploy](https://github.com/FHoffarth/tableunfuck/actions/workflows/deploy.yml/badge.svg)](https://github.com/FHoffarth/tableunfuck/actions/workflows/deploy.yml)
+[![Deploy](https://github.com/debother/tableunfuck/actions/workflows/deploy.yml/badge.svg)](https://github.com/debother/tableunfuck/actions/workflows/deploy.yml)
 
 Paste a broken table from Excel, Google Sheets, a website, email, chat or Notion.
 TableUnfuck cleans up the structure and lets you copy it as a clean table, Markdown, TSV
@@ -17,7 +17,8 @@ or JSON.
   preview and the Table output are both visible in one frame.
 -->
 
-Nothing is uploaded. Your data stays in your browser.
+Your table contents are processed locally in your browser and are not uploaded by
+TableUnfuck.
 
 ## What it does
 
@@ -28,7 +29,7 @@ Nothing is uploaded. Your data stays in your browser.
 - Detects a header row from real `<th>` evidence, and lets you set or unset it yourself
 - Flattens merged cells (`rowspan` / `colspan`) into a plain grid and says that it did
 - **EN / DE** interface
-- Runs entirely in your browser
+- Processes table contents locally in your browser
 
 ## Inputs it understands
 
@@ -50,10 +51,13 @@ data, it falls back to plain TSV and the button says so.
 
 ## Privacy
 
-- All processing happens locally, in your browser
-- Nothing is uploaded, and there is no backend
+- Table contents are processed locally in your browser
+- TableUnfuck does not upload or persist table contents, and the application has no
+  backend
 - No analytics, no tracking, no accounts
-- The app uses no `localStorage`, no `sessionStorage`, no cookies and no IndexedDB
+- The application uses no `localStorage`, no `sessionStorage`, no cookies and no IndexedDB
+- Hosting-related request data is separate from table processing; see the central
+  [Debother privacy notice](https://debother.com/privacy/)
 - The parser reports what it changed instead of quietly guessing
 - No column names are invented, ever
 

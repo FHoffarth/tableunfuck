@@ -373,9 +373,32 @@ export default function App() {
       )}
 
       <footer className="colophon">
-        {t("footerA")}
-        <br />
-        {t("footerB")}
+        <div className="colophon-copy">
+          <p>{t("footerA")}</p>
+          <p>{t("footerB")}</p>
+        </div>
+        <nav className="colophon-links" aria-label={t("footerNavigation")}>
+          <a
+            href={
+              lang === "de"
+                ? "https://debother.com/datenschutz/"
+                : "https://debother.com/privacy/"
+            }
+          >
+            {t("privacyLink")}
+          </a>
+          <a
+            href={
+              lang === "de"
+                ? "https://debother.com/impressum/"
+                : "https://debother.com/imprint/"
+            }
+          >
+            {t("imprintLink")}
+          </a>
+          <a href="https://debother.com/">{t("madeByDebother")}</a>
+          <a href="https://github.com/debother/tableunfuck">{t("githubLink")}</a>
+        </nav>
       </footer>
     </div>
   );

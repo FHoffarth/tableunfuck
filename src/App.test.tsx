@@ -216,7 +216,9 @@ describe("TableUnfuck", () => {
       ).toBeInTheDocument();
       expect(screen.getByRole("tab", { name: "Tabelle" })).toBeInTheDocument();
       expect(
-        screen.getByText("Nichts wird hochgeladen. Deine Daten bleiben im Browser."),
+        screen.getByText(
+          "Deine Tabelleninhalte werden lokal in deinem Browser verarbeitet und von TableUnfuck nicht hochgeladen.",
+        ),
       ).toBeInTheDocument();
       expect(screen.getByText(/als saubere Tabelle in Dokumente/i)).toBeInTheDocument();
       expect(
@@ -254,6 +256,64 @@ describe("TableUnfuck", () => {
 
       fireEvent.click(screen.getByRole("button", { name: "EN" }));
       expect(screen.getByTestId("output").textContent).toBe("Name\tRole\nAda\tEngineer");
+    });
+
+    it("shows precise privacy copy and language-matched legal links", () => {
+      render(<App />);
+
+      expect(
+        screen.getByText(
+          "Your table contents are processed locally in your browser and are not uploaded by TableUnfuck.",
+        ),
+      ).toBeInTheDocument();
+      expect(screen.queryByText("Everything stays in your browser")).not.toBeInTheDocument();
+      expect(
+        screen.getByText(
+          "TableUnfuck does not persist table contents between visits.",
+          { exact: false },
+        ),
+      ).toBeInTheDocument();
+
+      const englishFooter = screen.getByRole("navigation", { name: "Footer links" });
+      expect(within(englishFooter).getByRole("link", { name: "Privacy" })).toHaveAttribute(
+        "href",
+        "https://debother.com/privacy/",
+      );
+      expect(within(englishFooter).getByRole("link", { name: "Imprint" })).toHaveAttribute(
+        "href",
+        "https://debother.com/imprint/",
+      );
+      expect(
+        within(englishFooter).getByRole("link", { name: "Made by Debother" }),
+      ).toHaveAttribute("href", "https://debother.com/");
+      expect(within(englishFooter).getByRole("link", { name: "GitHub" })).toHaveAttribute(
+        "href",
+        "https://github.com/debother/tableunfuck",
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: "DE" }));
+
+      const germanFooter = screen.getByRole("navigation", { name: "Footer-Links" });
+      expect(
+        within(germanFooter).getByRole("link", { name: "Datenschutz" }),
+      ).toHaveAttribute("href", "https://debother.com/datenschutz/");
+      expect(within(germanFooter).getByRole("link", { name: "Impressum" })).toHaveAttribute(
+        "href",
+        "https://debother.com/impressum/",
+      );
+      expect(
+        within(germanFooter).getByRole("link", { name: "Made by Debother" }),
+      ).toHaveAttribute("href", "https://debother.com/");
+      expect(within(germanFooter).getByRole("link", { name: "GitHub" })).toHaveAttribute(
+        "href",
+        "https://github.com/debother/tableunfuck",
+      );
+      expect(
+        screen.getByText(
+          "TableUnfuck speichert Tabelleninhalte nicht zwischen Besuchen.",
+          { exact: false },
+        ),
+      ).toBeInTheDocument();
     });
   });
 });

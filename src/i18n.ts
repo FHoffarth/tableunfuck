@@ -14,9 +14,10 @@ const en = {
   introHeadline: "Messy table in. Clean table out.",
   introBody:
     "Paste a broken table from Excel, Google Sheets, a website, email, chat or Notion. TableUnfuck cleans up the structure and lets you copy it as a clean table, Markdown, TSV or JSON.",
-  introPrivacy: "Nothing is uploaded. Your data stays in your browser.",
+  introPrivacy:
+    "Your table contents are processed locally in your browser and are not uploaded by TableUnfuck.",
 
-  trust: "Everything stays in your browser",
+  trust: "Table contents stay in your browser",
   pasteLabel: "Paste a table here",
   placeholder: "Press Cmd/Ctrl+V anywhere on this page, or type tab-separated rows here.",
   clear: "Clear input",
@@ -34,7 +35,7 @@ const en = {
   paste: "Paste",
   preview: "Preview",
   emptyState:
-    "Nothing pasted yet. Copy a table from an email, Slack, Notion, Jira or any web page, then press Cmd/Ctrl+V. Parsing happens here on your machine. Nothing is uploaded.",
+    "Nothing pasted yet. Copy a table from an email, Slack, Notion, Jira or any web page, then press Cmd/Ctrl+V. Parsing happens here on your machine. Table contents are not uploaded by TableUnfuck.",
   row: "row",
   rows: "rows",
   column: "column",
@@ -66,9 +67,15 @@ const en = {
   richCopyNote:
     "Copies as a real table for Word, Outlook, Gmail, Google Docs or Notion, with TSV as the plain-text fallback. Not every target keeps the styling.",
 
-  footerA: "No backend. No accounts. No analytics. Nothing is stored between visits.",
+  footerA:
+    "No backend. No accounts. No analytics. TableUnfuck does not persist table contents between visits.",
   footerB:
     "Deterministic parsing only. The parser reports what it changed instead of guessing.",
+  footerNavigation: "Footer links",
+  privacyLink: "Privacy",
+  imprintLink: "Imprint",
+  madeByDebother: "Made by Debother",
+  githubLink: "GitHub",
 } as const;
 
 export type StringKey = keyof typeof en;
@@ -78,9 +85,10 @@ const de: Record<StringKey, string> = {
   introHeadline: "Kaputte Tabelle rein. Saubere Tabelle raus.",
   introBody:
     "Kopiere eine kaputte oder verschobene Tabelle aus Excel, Google Sheets, einer Website, E-Mail, einem Chat oder Notion. TableUnfuck bringt die Struktur wieder in Ordnung und gibt sie als saubere Tabelle, Markdown, TSV oder JSON aus.",
-  introPrivacy: "Nichts wird hochgeladen. Deine Daten bleiben im Browser.",
+  introPrivacy:
+    "Deine Tabelleninhalte werden lokal in deinem Browser verarbeitet und von TableUnfuck nicht hochgeladen.",
 
-  trust: "Alles bleibt in deinem Browser",
+  trust: "Tabelleninhalte bleiben in deinem Browser",
   pasteLabel: "Tabelle hier einfügen",
   placeholder:
     "Drücke Cmd/Strg+V irgendwo auf dieser Seite oder tippe tabgetrennte Zeilen ein.",
@@ -99,7 +107,7 @@ const de: Record<StringKey, string> = {
   paste: "Einfügen",
   preview: "Vorschau",
   emptyState:
-    "Noch nichts eingefügt. Kopiere eine Tabelle aus einer E-Mail, aus Slack, Notion, Jira oder einer beliebigen Webseite und drücke Cmd/Strg+V. Die Verarbeitung passiert hier auf deinem Gerät. Nichts wird hochgeladen.",
+    "Noch nichts eingefügt. Kopiere eine Tabelle aus einer E-Mail, aus Slack, Notion, Jira oder einer beliebigen Webseite und drücke Cmd/Strg+V. Die Verarbeitung passiert hier auf deinem Gerät. Tabelleninhalte werden von TableUnfuck nicht hochgeladen.",
   row: "Zeile",
   rows: "Zeilen",
   column: "Spalte",
@@ -132,9 +140,14 @@ const de: Record<StringKey, string> = {
     "Wird als echte Tabelle für Word, Outlook, Gmail, Google Docs oder Notion kopiert, mit TSV als Klartext-Rückfallebene. Nicht jedes Ziel übernimmt die Formatierung.",
 
   footerA:
-    "Kein Backend. Keine Konten. Kein Tracking. Zwischen Besuchen wird nichts gespeichert.",
+    "Kein Backend. Keine Konten. Kein Tracking. TableUnfuck speichert Tabelleninhalte nicht zwischen Besuchen.",
   footerB:
     "Rein deterministisches Parsen. Der Parser meldet, was er geändert hat, statt zu raten.",
+  footerNavigation: "Footer-Links",
+  privacyLink: "Datenschutz",
+  imprintLink: "Impressum",
+  madeByDebother: "Made by Debother",
+  githubLink: "GitHub",
 };
 
 export const STRINGS: Record<Lang, Record<StringKey, string>> = { en, de };

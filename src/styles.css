@@ -578,6 +578,27 @@ button {
   color: var(--ink-soft);
 }
 
+.colophon-copy p {
+  margin: 0;
+}
+
+.colophon-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  margin-top: 10px;
+}
+
+.colophon-links a {
+  color: inherit;
+  text-decoration-color: var(--edge);
+  text-underline-offset: 3px;
+}
+
+.colophon-links a:hover {
+  color: var(--ink);
+}
+
 @media (max-width: 760px) {
   .masthead-right {
     align-items: flex-start;
